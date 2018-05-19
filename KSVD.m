@@ -147,3 +147,20 @@ for i = 1:size(original,2)
     catchCounter = catchCounter+(errorOfElement<0.01);
 end
 ratio = 100*catchCounter/size(original,2);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  I_clearDictionary
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Dictionary = I_clearDictionary(Dictionary,CoefMatrix,Data)
+T2 = 0.99;
+T1 = 3;
+K=size(Dictionary,2);
+Er=sum((Data-Dictionary*CoefMatrix).^2,1); % remove identical atoms
+G=Dictionary'*Dictionary; G = G-diag(diag(G));
+for jj=1:1:K,
+    if max(G(jj,:))>T2 | length(find(abs(CoefMatrix(jj,:))>1e-7))<=T1 ,
+        [val,pos]=max(Er);
+        Er(pos(1))=0;
+        Dictionary(:,jj)=Data(:,pos(1))/norm(Data(:,pos(1)));
+        G=Dictionary'*Dictionary; G = G-diag(diag(G));
+    end;
+end;
