@@ -1,7 +1,69 @@
 function [Dictionary,output] = KSVD(...
     Data,... % an nXN matrix that contins N signals (Y), each of dimension n.
     param)
-    
+% =========================================================================
+%                          K-SVD algorithm
+% =========================================================================
+% The K-SVD algorithm finds a dictionary for linear representation of
+% signals. Given a set of signals, it searches for the best dictionary that
+% can sparsely represent each signal. Detailed discussion on the algorithm
+% and possible applications can be found in "The K-SVD: An Algorithm for 
+% Designing of Overcomplete Dictionaries for Sparse Representation", written
+% by M. Aharon, M. Elad, and A.M. Bruckstein and appeared in the IEEE Trans. 
+% On Signal Processing, Vol. 54, no. 11, pp. 4311-4322, November 2006. 
+% =========================================================================
+% INPUT ARGUMENTS:
+% Data                         an nXN matrix that contins N signals (Y), each of dimension n. 
+% param                        structure that includes all required
+%                                 parameters for the K-SVD execution.
+%                                 Required fields are:
+%    K, ...                    the number of dictionary elements to train
+%    numIteration,...          number of iterations to perform.
+%    errorFlag...              if =0, a fix number of coefficients is
+%                                 used for representation of each signal. If so, param.L must be
+%                                 specified as the number of representing atom. if =1, arbitrary number
+%                                 of atoms represent each signal, until a specific representation error
+%                                 is reached. If so, param.errorGoal must be specified as the allowed
+%                                 error.
+%    preserveDCAtom...         if =1 then the first atom in the dictionary
+%                                 is set to be constant, and does not ever change. This
+%                                 might be useful for working with natural
+%                                 images (in this case, only param.K-1
+%                                 atoms are trained).
+%    (optional, see errorFlag) L,...                 % maximum coefficients to use in OMP coefficient calculations.
+%    (optional, see errorFlag) errorGoal, ...        % allowed representation error in representing each signal.
+%    InitializationMethod,...  mehtod to initialize the dictionary, can
+%                                 be one of the following arguments: 
+%                                 * 'DataElements' (initialization by the signals themselves), or: 
+%                                 * 'GivenMatrix' (initialization by a given matrix param.initialDictionary).
+%    (optional, see InitializationMethod) initialDictionary,...      % if the initialization method 
+%                                 is 'GivenMatrix', this is the matrix that will be used.
+%    (optional) TrueDictionary, ...        % if specified, in each
+%                                 iteration the difference between this dictionary and the trained one
+%                                 is measured and displayed.
+%    displayProgress, ...      if =1 progress information is displyed. If param.errorFlag==0, 
+%                                 the average repersentation error (RMSE) is displayed, while if 
+%                                 param.errorFlag==1, the average number of required coefficients for 
+%                                 representation of each signal is displayed.
+% =========================================================================
+% OUTPUT ARGUMENTS:
+%  Dictionary                  The extracted dictionary of size nX(param.K).
+%  output                      Struct that contains information about the current run. It may include the following fields:
+%    CoefMatrix                  The final coefficients matrix (it should hold that Data equals approximately Dictionary*output.CoefMatrix.
+%    ratio                       If the true dictionary was defined (in
+%                                synthetic experiments), this parameter holds a vector of length
+%                                param.numIteration that includes the detection ratios in each
+%                                iteration).
+%    totalerr                    The total representation error after each
+%                                iteration (defined only if
+%                                param.displayProgress=1 and
+%                                param.errorFlag = 0)
+%    numCoef                     A vector of length param.numIteration that
+%                                include the average number of coefficients required for representation
+%                                of each signal (in each iteration) (defined only if
+%                                param.displayProgress=1 and
+%                                param.errorFlag = 1)
+% =========================================================================
 if (~isfield(param,'displayProgress'))
     param.displayProgress = 0;
 end
